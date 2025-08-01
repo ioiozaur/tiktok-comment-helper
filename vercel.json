@@ -1,8 +1,14 @@
 {
     "functions": {
-      "api/generate/index.js": {
+      "api/generate.js": {
         "runtime": "nodejs18.x"
       }
-    }
+    },
+    "routes": [
+      {
+        "src": "/api/generate",
+        "dest": "api/generate.js"
+      }
+    ]
   }
   
