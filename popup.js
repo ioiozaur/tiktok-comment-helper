@@ -1,27 +1,21 @@
-document.getElementById('generate').addEventListener('click', async () => {
-  const input = document.getElementById('input').value.trim();
-  const output = document.getElementById('output');
-  const copyBtn = document.getElementById('copy');
+export default async function handler(req, res) {
+  // Enable CORS for Chrome Extension
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  if (!input) {
-    output.textContent = "Please enter some text from the video.";
-    return;
+  if (req.method === "OPTIONS") {
+    return res.status(200).end(); // respond to preflight
   }
 
-  output.textContent = "Analyzing...";
-
-  const prompt = `
-This is a caption or description from a TikTok video: "${input}"
-
-Generate a short, friendly, science-based comment that adds context and helps clarify any misleading or exaggerated claims. Keep it neutral and helpful, not judgmental.
-  `;
+  const { prompt } = req.body;
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-       "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
         model: "gpt-4",
@@ -31,15 +25,9 @@ Generate a short, friendly, science-based comment that adds context and helps cl
     });
 
     const data = await response.json();
-    const comment = data.choices[0].message.content;
-    output.textContent = comment;
-    copyBtn.style.display = "block";
-
-    copyBtn.onclick = () => {
-      navigator.clipboard.writeText(comment);
-      copyBtn.textContent = "Copied!";
-    };
-  } catch (err) {
-    output.textContent = "Error getting response. Check your API key or try again.";
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("API error:", error);
+    res.status(500).json({ error: "Failed to get response from OpenAI" });
   }
-});
+}
