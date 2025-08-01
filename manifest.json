@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "TikTok Fact Comment",
+  "description": "Generate science-based comments for TikTok videos",
+  "version": "1.0",
+  "permissions": [],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icons/icon128.png"
+  }
+}
