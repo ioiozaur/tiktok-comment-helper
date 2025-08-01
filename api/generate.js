@@ -1,20 +1,34 @@
-module.exports = async (req, res) => {
-    // CORS
+export default async function handler(req, res) {
+    // Enable CORS for Chrome Extension
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   
     if (req.method === "OPTIONS") {
-      return res.status(200).end();
+      return res.status(200).end(); // respond to preflight
     }
   
-    const { prompt } = req.body;
+    let prompt;
+  
+    try {
+      const body = await new Promise((resolve, reject) => {
+        let data = "";
+        req.on("data", chunk => data += chunk);
+        req.on("end", () => resolve(JSON.parse(data)));
+        req.on("error", reject);
+      });
+  
+      prompt = body.prompt;
+    } catch (err) {
+      console.error("Failed to parse JSON:", err);
+      return res.status(400).json({ error: "Invalid JSON" });
+    }
   
     try {
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
@@ -26,9 +40,9 @@ module.exports = async (req, res) => {
   
       const data = await response.json();
       res.status(200).json(data);
-    } catch (err) {
-      console.error("API error:", err);
-      res.status(500).json({ error: "Failed to fetch from OpenAI" });
+    } catch (error) {
+      console.error("API error:", error);
+      res.status(500).json({ error: "Failed to get response from OpenAI" });
     }
-  };
+  }
   
