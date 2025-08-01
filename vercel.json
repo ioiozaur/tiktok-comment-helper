@@ -1,0 +1,8 @@
+{
+    "functions": {
+      "api/generate/index.js": {
+        "runtime": "nodejs18.x"
+      }
+    }
+  }
+  
