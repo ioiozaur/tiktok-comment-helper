@@ -8,20 +8,17 @@ export default async function handler(req, res) {
       return res.status(200).end(); // respond to preflight
     }
   
+    // Parse JSON body
     let prompt;
-  
     try {
-      const body = await new Promise((resolve, reject) => {
-        let data = "";
-        req.on("data", chunk => data += chunk);
-        req.on("end", () => resolve(JSON.parse(data)));
-        req.on("error", reject);
-      });
-  
+      const body = await req.json(); // for Vercel Edge Functions
       prompt = body.prompt;
-    } catch (err) {
-      console.error("Failed to parse JSON:", err);
-      return res.status(400).json({ error: "Invalid JSON" });
+    } catch (e) {
+      return res.status(400).json({ error: "Invalid JSON body" });
+    }
+  
+    if (!prompt) {
+      return res.status(400).json({ error: "Missing prompt" });
     }
   
     try {
@@ -32,18 +29,23 @@ export default async function handler(req, res) {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            model: "gpt-3.5-turbo",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.7
-          })
-          
+          model: "gpt-3.5-turbo", // use gpt-4 only if you’re sure your API key supports it
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7
+        })
       });
   
       const data = await response.json();
-      res.status(200).json(data);
+  
+      if (data.error) {
+        console.error("OpenAI API Error:", data.error);
+        return res.status(500).json({ error: data.error.message || "OpenAI error" });
+      }
+  
+      return res.status(200).json(data);
     } catch (error) {
-      console.error("API error:", error);
-      res.status(500).json({ error: "Failed to get response from OpenAI" });
+      console.error("Server Error:", error);
+      return res.status(500).json({ error: "Failed to get response from OpenAI" });
     }
   }
   
